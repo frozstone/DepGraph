@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3c.org/TR/MathML2/dtd/xhtml-math11-f.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:svg="http://www.w3.org/2000/svg">
+  <head>
+    <title/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <link rel="stylesheet" type="text/css" href="core.css"/>
+  </head>
+  <body>
+    <div class="navbar">
+  <ul class="toc">
+  <li class="tocentry"><span class="ref toc here">?</span></li>
+    </ul>
+      </div>
+    <div class="main">
+    <div class="content"><div class="document"><div class="para" id="p1"><p class="p">
+    <m:math display="inline"><m:mi>a</m:mi></m:math>
+    <m:math display="inline"><m:msub><m:mi>a</m:mi><m:mi>i</m:mi></m:msub></m:math>
+    <m:math display="inline"><m:msub><m:mi>a</m:mi><m:mi>n</m:mi></m:msub></m:math>
+    <m:math display="inline"><m:mover accent="true"><m:mi>a</m:mi><m:mo>~</m:mo></m:mover></m:math>
+    <m:math display="inline"><m:msub><m:mover accent="true"><m:mi>a</m:mi><m:mo>~</m:mo></m:mover><m:mi>n</m:mi></m:msub></m:math>
+    <m:math display="inline"><m:mover accent="true"><m:mi>a</m:mi><m:mo>~</m:mo></m:mover></m:math>
+    <m:math display="inline"><m:mover accent="true"><m:msub><m:mi>a</m:mi><m:mi>n</m:mi></m:msub><m:mo>~</m:mo></m:mover></m:math></p></div></div>
+        </div>
+      </div>
+    </body>
+    </html>

@@ -3,12 +3,12 @@ from os import listdir, path
 import re
 
 #Properties
-xhtmlDir = '/home/yoko/Working/vartab/'
+xhtmlDir = 'vartab/'
 tagsWithBase = ['mroot', 'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mmultiscripts'] #have not considered mstyle
 re_baseTags = '<(tags)>((?!(tags)>).)*</(tags)>'
 expressiontag = 'expression'
 mathtag = 'math'
-pageDestDir = '/home/yoko/Working/vartab/xhtml/'
+pageDestDir = 'vartab/xhtml/'
 
 
 def __generateRegex():
