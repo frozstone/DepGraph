@@ -10,6 +10,8 @@ expressiontag = 'expression'
 mathtag = 'math'
 pageDestDir = 'vartab/xhtml/'
 
+#Properties for evaluation
+descDir = 'D:/ntcir10/result_np_nx/'
 
 def __generateRegex():
     tags = '|'.join(tagsWithBase)
@@ -17,8 +19,8 @@ def __generateRegex():
     re_baseTags = re_baseTags.replace('tags', tags)
     return True
 
-def __getXHTMLFiles(sourceDir):
-    return [path.join(sourceDir, flName) for flName in listdir(sourceDir) if flName.endswith('.xml')]
+def __getFiles(sourceDir, extension):
+    return [path.join(sourceDir, flName) for flName in listdir(sourceDir) if flName.endswith(extension)]
 
 def __expandMaths(mts_string):
     '''
@@ -109,38 +111,87 @@ def __showAsWebPage(edges, flname, dictmath, dictdesc, destflname):
     f.close()
 
 
+#Methods for evaluation
+def __groupParasBasedOnPaper(paras):
+    papers = {}
+    for para in paras:
+        paper = para[:para.index('_')]
+        if paper not in papers:
+            papers[paper] = [para]
+        else:
+            papers[paper].append(para)
+    return papers
+
+
+def __getDepGraphForEvaluation(fl):
+    '''
+        NOTE:   The math tags for evaluation are obtained using math understanding dataset.
+                They use xmlns --> <m:math>
+    '''
+    lns = open(fl).readlines()
+
+    mts = {}
+    mts_conventional = {}
+
+    for ln in lns:
+        if ln.strip() == '':
+            continue
+        cells = ln.strip().split('\t')
+        
+        initial = __normalizeMathTags(cells[1])
+        mid, formattedmath = __removeAnnotation(minidom.parseString(initial.encode('utf-8')))
+        expanded = __expandMaths(formattedmath)
+        mts_conventional[cells[0]] = [__getValueOfMathTags(formattedmath)]
+        mts[cells[0]] = expanded
+
+    edges_conventional = __createDepGraph(mts_conventional)
+    edges = __createDepGraph(mts)
+    return edges_conventional, edges
+
+def MainMethodForXML_Test(fl):
+    '''
+        This method is used only for comparing new dep graph to the previous one.
+        Therefore, there is no need to return any meaningful value.
+    '''
+    xdoc = minidom.parse(fl)
+        
+    #enumerate if there is no id in the <math> tag
+    mts = {}
+    mts_conventional = {}
+    descriptions = {}
+        
+    #for xhtml, enumerate mathtag; for xml, enumerate expressiontag
+    for idx, exp in enumerate(xdoc.getElementsByTagName(expressiontag)):
+        #remove this line when using xhtml
+        mt = exp.getElementsByTagName(mathtag)[0]
+
+        initial = __normalizeMathTags(mt.toxml())
+        mid, formattedmath = __removeAnnotation(minidom.parseString(initial.encode('utf-8')))
+        expanded =__expandMaths(formattedmath)
+        mts_conventional[mid] = [__getValueOfMathTags(formattedmath)]
+        mts[mid] = expanded
+
+        descriptiontags = [desc.firstChild.nodeValue for desc in exp.getElementsByTagName('description') if not desc.hasAttribute('type') and desc.firstChild is not None]
+        descriptions[mid] = descriptiontags[0] if len(descriptiontags) > 0 else ''
+        
+    edges_conventional = __createDepGraph(mts_conventional)
+    edges = __createDepGraph(mts)
+    edges_diff = __getDifferenceBetweenGraphs(edges_conventional, edges)
+    print len(edges), len(edges_conventional)
+
+    destPath = path.join(pageDestDir, path.basename(fl).replace('.xml', '.html'))
+    __showAsWebPage(edges_diff, path.basename(fl), mts, descriptions, destPath)
+
+    return True
+
 if __name__ == '__main__':
     #Preparation
     __generateRegex()
-    files = __getXHTMLFiles(xhtmlDir)
-
-    for fl in files:
-        print fl
-        xdoc = minidom.parse(fl)
-        
-        #enumerate if there is no id in the <math> tag
-        mts = {}
-        mts_conventional = {}
-        descriptions = {}
-        
-        #for xhtml, enumerate mathtag; for xml, enumerate expressiontag
-        for idx, exp in enumerate(xdoc.getElementsByTagName(expressiontag)):
-            #remove this line when using xhtml
-            mt = exp.getElementsByTagName(mathtag)[0]
-
-            initial = __normalizeMathTags(mt.toxml())
-            mid, formattedmath = __removeAnnotation(minidom.parseString(initial.encode('utf-8')))
-            expanded =__expandMaths(formattedmath)
-            mts_conventional[mid] = [__getValueOfMathTags(formattedmath)]
-            mts[mid] = expanded
-
-            descriptiontags = [desc.firstChild.nodeValue for desc in exp.getElementsByTagName('description') if not desc.hasAttribute('type') and desc.firstChild is not None]
-            descriptions[mid] = descriptiontags[0] if len(descriptiontags) > 0 else ''
-        
-        edges_conventional = __createDepGraph(mts_conventional)
-        edges = __createDepGraph(mts)
-        edges_diff = __getDifferenceBetweenGraphs(edges_conventional, edges)
-        print len(edges), len(edges_conventional)
-
-        destPath = path.join(pageDestDir, path.basename(fl).replace('.xml', '.html'))
-        __showAsWebPage(edges_diff, path.basename(fl), mts, descriptions, destPath)
+    files = __getFiles(xhtmlDir, '.xhtml')
+    descFiles = __getFiles(descDir, '.txt')
+    
+    #Only for evaluation
+    papers = __getPaperNameFromPara(descFiles)
+    for p in papers:
+        print p
+        edgesConv, edgesNew = MainMethodQuantEvaluation(p + )
