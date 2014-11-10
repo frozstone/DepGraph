@@ -11,7 +11,8 @@ mathtag = 'math'
 pageDestDir = 'vartab/xhtml/'
 
 #Properties for evaluation
-descDir = 'D:/ntcir10/result_np_nx/'
+descDir = '/home/yoko/working/ntcir10/annotation/bios_long/'
+mathDir = '/home/yoko/working/ntcir10math/'
 
 def __generateRegex():
     tags = '|'.join(tagsWithBase)
@@ -112,30 +113,88 @@ def __showAsWebPage(edges, flname, dictmath, dictdesc, destflname):
 
 
 #Methods for evaluation
+def __checkIfTwoMathsAreSameBase(math1, math2):
+    '''
+        math1, math2 : lists of candidate matchers
+        return True if an edge should be drawn from math1 to math2
+    '''
+    for mt1 in math1:
+        for mt2 in math2:
+            if mt2 == mt1:
+                return True
+    return False
+
+def __createDepGraphForEval(mts):
+    '''
+        mts: {idx:[matchers]}
+    '''
+    edges = {}
+    for idx1, matchers1 in mts.iteritems():
+        for idx2, matchers2 in mts.iteritems():
+            if idx1 != idx2 and __checkIfTwoMathsAreSameBase(matchers1, matchers2):
+                if idx1 not in edges:
+                    edges[idx1] = [idx2]
+                else:
+                    edges[idx1].append(idx2)
+    return edges
+
 def __groupParasBasedOnPaper(paras):
     papers = {}
     for para in paras:
-        paper = para[:para.index('_')]
+        paper = para[para.rindex('/') + 1:para.rindex('_')]
         if paper not in papers:
             papers[paper] = [para]
         else:
             papers[paper].append(para)
     return papers
 
+def __getDescriptionFromPara(fl):
+    '''
+        fl represent para
+    '''
+    lns = open(fl).readlines()
+    desc = {}
 
-def __getDepGraphForEvaluation(fl):
+    papername = fl[fl.rindex('/') + 1:fl.rindex('_')]
+    mt = ''
+    for ln in lns:
+        if ln.startswith('MATH_'):
+            mt = ln.strip().replace('_', '_' +papername + '_')
+        elif ln.startswith('['):
+            if mt in desc:
+                desc[mt].append(ln.strip())
+            else:
+                desc[mt] = [ln.strip()]
+    return desc
+
+def __getDescriptionFromParas(fls):
+    '''
+        fls represent paras
+    '''
+    descs = {}
+    for fl in fls:
+        descs.update(__getDescriptionFromPara(fl))
+    return descs
+
+
+def __getDepGraphForEval(fl):
     '''
         NOTE:   The math tags for evaluation are obtained using math understanding dataset.
                 They use xmlns --> <m:math>
+        Return: edges_conventional and edges
+                edges = {idx1:[mt1, mt2, ...]}
     '''
     lns = open(fl).readlines()
 
     mts = {}
     mts_conventional = {}
 
+    nmaths = 0
     for ln in lns:
         if ln.strip() == '':
             continue
+        nmaths += 1 if ln.startswith('MATH_') else 0
+
         cells = ln.strip().split('\t')
         
         initial = __normalizeMathTags(cells[1])
@@ -144,9 +203,12 @@ def __getDepGraphForEvaluation(fl):
         mts_conventional[cells[0]] = [__getValueOfMathTags(formattedmath)]
         mts[cells[0]] = expanded
 
-    edges_conventional = __createDepGraph(mts_conventional)
-    edges = __createDepGraph(mts)
-    return edges_conventional, edges
+    edges_conventional = __createDepGraphForEval(mts_conventional)
+    edges = __createDepGraphForEval(mts)
+    return edges_conventional, edges, nmaths
+
+def __getNumberOfMathsHavingDesc():
+
 
 def MainMethodForXML_Test(fl):
     '''
@@ -191,7 +253,10 @@ if __name__ == '__main__':
     descFiles = __getFiles(descDir, '.txt')
     
     #Only for evaluation
-    papers = __getPaperNameFromPara(descFiles)
-    for p in papers:
+    nmaths = 0
+    papers = __groupParasBasedOnPaper(descFiles)
+    for p in papers.keys():
         print p
-        edgesConv, edgesNew = MainMethodQuantEvaluation(p + )
+        edgesConv, edgesNew, nmts = __getDepGraphForEval(path.join(mathDir, p) + '_output.txt')
+        descs = __getDescriptionFromParas(papers[p])
+        nmaths += nmts
