@@ -11,8 +11,8 @@ mathtag = 'math'
 pageDestDir = 'vartab/xhtml/'
 
 #Properties for evaluation
-descDir = '/home/yoko/working/ntcir10/annotation/bios_long/'
-mathDir = '/home/yoko/working/ntcir10math/'
+descDir = 'D:/ntcir10/annotation/bios_long/'
+mathDir = 'D:/ntcir10math/'
 
 def __generateRegex():
     tags = '|'.join(tagsWithBase)
@@ -111,6 +111,48 @@ def __showAsWebPage(edges, flname, dictmath, dictdesc, destflname):
     f.writelines(page)
     f.close()
 
+def __getDepGraphForTest(fl):
+    '''
+        This method is used only for comparing new dep graph to the previous one.
+        Therefore, there is no need to return any meaningful value.
+    '''
+    xdoc = minidom.parse(fl)
+        
+    #enumerate if there is no id in the <math> tag
+    mts = {}
+    mts_conventional = {}
+    descriptions = {}
+        
+    #for xhtml, enumerate mathtag; for xml, enumerate expressiontag
+    for idx, exp in enumerate(xdoc.getElementsByTagName(expressiontag)):
+        #remove this line when using xhtml
+        mt = exp.getElementsByTagName(mathtag)[0]
+
+        initial = __normalizeMathTags(mt.toxml())
+        mid, formattedmath = __removeAnnotation(minidom.parseString(initial.encode('utf-8')))
+        expanded =__expandMaths(formattedmath)
+        mts_conventional[mid] = [__getValueOfMathTags(formattedmath)]
+        mts[mid] = expanded
+
+        descriptiontags = [desc.firstChild.nodeValue for desc in exp.getElementsByTagName('description') if not desc.hasAttribute('type') and desc.firstChild is not None]
+        descriptions[mid] = descriptiontags[0] if len(descriptiontags) > 0 else ''
+        
+    edges_conventional = __createDepGraph(mts_conventional)
+    edges = __createDepGraph(mts)
+    edges_diff = __getDifferenceBetweenGraphs(edges_conventional, edges)
+    print len(edges), len(edges_conventional)
+
+    destPath = path.join(pageDestDir, path.basename(fl).replace('.xml', '.html'))
+    __showAsWebPage(edges_diff, path.basename(fl), mts, descriptions, destPath)
+
+    return True
+
+def MainMethodForTest():
+    files = __getFiles(xhtmlDir, '.xml')
+    for fl in files:
+        __getDepGraphForTest(fl)
+    return True
+
 
 #Methods for evaluation
 def __checkIfTwoMathsAreSameBase(math1, math2):
@@ -176,7 +218,6 @@ def __getDescriptionFromParas(fls):
         descs.update(__getDescriptionFromPara(fl))
     return descs
 
-
 def __getDepGraphForEval(fl):
     '''
         NOTE:   The math tags for evaluation are obtained using math understanding dataset.
@@ -198,7 +239,8 @@ def __getDepGraphForEval(fl):
         cells = ln.strip().split('\t')
         
         initial = __normalizeMathTags(cells[1])
-        mid, formattedmath = __removeAnnotation(minidom.parseString(initial.encode('utf-8')))
+        #print initial
+        mid, formattedmath = __removeAnnotation(minidom.parseString(initial))
         expanded = __expandMaths(formattedmath)
         mts_conventional[cells[0]] = [__getValueOfMathTags(formattedmath)]
         mts[cells[0]] = expanded
@@ -207,56 +249,44 @@ def __getDepGraphForEval(fl):
     edges = __createDepGraphForEval(mts)
     return edges_conventional, edges, nmaths
 
-def __getNumberOfMathsHavingDesc():
+def __getNumberOfMathsHavingDesc(edges, descs):
+    mts = []
+    for mt, desc in descs.iteritems():
+        mts.append(mt)
+        if mt in edges:
+            mts.extend(edges[mt])
+    return list(set(mts))
 
+def MainMethodForEval():
+    descFiles = __getFiles(descDir, '.txt')
+    nmaths = 0
+    nmaths_desc_wo_dep = 0
+    nmaths_desc_olddep = 0
+    nmaths_desc_newdep = 0
 
-def MainMethodForXML_Test(fl):
-    '''
-        This method is used only for comparing new dep graph to the previous one.
-        Therefore, there is no need to return any meaningful value.
-    '''
-    xdoc = minidom.parse(fl)
+    edges_olddep = 0
+    edges_newdep = 0
+    papers = __groupParasBasedOnPaper(descFiles)
+    for p in papers.keys():
+        #print p
+        edgesConv, edgesNew, nmts = __getDepGraphForEval(path.join(mathDir, p) + '_output.txt')
+        descs = __getDescriptionFromParas(papers[p])
+        mts_desc_olddep = __getNumberOfMathsHavingDesc(edgesConv, descs)
+        mts_desc_newdep = __getNumberOfMathsHavingDesc(edgesNew, descs)
+
+        nmaths += nmts
+        nmaths_desc_wo_dep += len(descs.keys())
+        nmaths_desc_olddep += len(mts_desc_olddep)
+        nmaths_desc_newdep += len(mts_desc_newdep)
         
-    #enumerate if there is no id in the <math> tag
-    mts = {}
-    mts_conventional = {}
-    descriptions = {}
-        
-    #for xhtml, enumerate mathtag; for xml, enumerate expressiontag
-    for idx, exp in enumerate(xdoc.getElementsByTagName(expressiontag)):
-        #remove this line when using xhtml
-        mt = exp.getElementsByTagName(mathtag)[0]
+        edges_olddep += sum(len(v) for k, v in edgesConv.iteritems())
+        edges_newdep += sum(len(v) for k, v in edgesNew.iteritems())
 
-        initial = __normalizeMathTags(mt.toxml())
-        mid, formattedmath = __removeAnnotation(minidom.parseString(initial.encode('utf-8')))
-        expanded =__expandMaths(formattedmath)
-        mts_conventional[mid] = [__getValueOfMathTags(formattedmath)]
-        mts[mid] = expanded
-
-        descriptiontags = [desc.firstChild.nodeValue for desc in exp.getElementsByTagName('description') if not desc.hasAttribute('type') and desc.firstChild is not None]
-        descriptions[mid] = descriptiontags[0] if len(descriptiontags) > 0 else ''
-        
-    edges_conventional = __createDepGraph(mts_conventional)
-    edges = __createDepGraph(mts)
-    edges_diff = __getDifferenceBetweenGraphs(edges_conventional, edges)
-    print len(edges), len(edges_conventional)
-
-    destPath = path.join(pageDestDir, path.basename(fl).replace('.xml', '.html'))
-    __showAsWebPage(edges_diff, path.basename(fl), mts, descriptions, destPath)
-
+    print len(papers)
+    print edges_olddep, edges_newdep
+    print nmaths, nmaths_desc_wo_dep, nmaths_desc_olddep, nmaths_desc_newdep
     return True
-
 if __name__ == '__main__':
     #Preparation
     __generateRegex()
-    files = __getFiles(xhtmlDir, '.xhtml')
-    descFiles = __getFiles(descDir, '.txt')
-    
-    #Only for evaluation
-    nmaths = 0
-    papers = __groupParasBasedOnPaper(descFiles)
-    for p in papers.keys():
-        print p
-        edgesConv, edgesNew, nmts = __getDepGraphForEval(path.join(mathDir, p) + '_output.txt')
-        descs = __getDescriptionFromParas(papers[p])
-        nmaths += nmts
+    MainMethodForEval()
