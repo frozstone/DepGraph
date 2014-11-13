@@ -11,7 +11,7 @@ mathtag = 'math'
 pageDestDir = 'vartab/xhtml/'
 
 #Properties for evaluation
-descDir = 'D:/ntcir10/annotation/bios_short/'
+descDir = 'D:/ntcir10/annotation/bios_long/' #do for annotation and extraction data
 mathDir = 'D:/ntcir10math/'
 
 def __generateRegex():
