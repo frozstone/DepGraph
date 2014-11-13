@@ -11,6 +11,7 @@ mathtag = 'math'
 pageDestDir = 'vartab/xhtml/'
 
 #Properties for evaluation
+#PLEASE CONSIDER UNIQUE MATH INSTEAD
 descDir = 'D:/ntcir10/annotation/bios_long/' #do for annotation and extraction data
 mathDir = 'D:/ntcir10math/'
 
@@ -231,11 +232,12 @@ def __getDepGraphForEval(fl):
     mts_conventional = {}
 
     nmaths = 0
+    nuniquemaths = 0
     for ln in lns:
         if ln.strip() == '':
             continue
         nmaths += 1 if ln.startswith('MATH_') else 0
-
+        
         cells = ln.strip().split('\t')
         
         initial = __normalizeMathTags(cells[1])
@@ -247,7 +249,8 @@ def __getDepGraphForEval(fl):
 
     edges_conventional = __createDepGraphForEval(mts_conventional)
     edges = __createDepGraphForEval(mts)
-    return edges_conventional, edges, nmaths
+    nuniquemaths = __getNumberUniqueMaths(mts_conventional)
+    return edges_conventional, edges, nmaths, nuniquemaths
 
 def __getNumberOfMathsHavingDesc(edges, descs):
     mts = []
@@ -257,6 +260,32 @@ def __getNumberOfMathsHavingDesc(edges, descs):
             mts.extend(edges[mt])
     return list(set(mts))
 
+def __getNumberUniqueMaths(mts):
+    '''
+        mts : {'id': [mathml in string]}
+    '''
+    return len(set([val[0] for val in mts.values()]))
+
+def __getStatFromDescFile(fls):
+    nmaths = []
+    for fl in fls:
+        paper = fl[fl.rindex('/') + 1:fl.rindex('_')]
+        for ln in open(fl).readlines():
+            if ln.startswith('MATH_'):
+                nmaths.append(ln.strip().replace('_', '_' + paper + '_'))
+
+    nmaths1 = []
+    flmts = listdir(mathDir)
+    for flmt in flmts:
+        for ln in open(path.join(mathDir, flmt)).readlines():
+            if ln.startswith('MATH_'):
+                nmaths1.append(ln.split('\t')[0])
+
+    print len(set(nmaths)), len((nmaths1))
+    x = list(set(nmaths1).difference(set(nmaths)))
+    x.sort()
+    print x
+
 def MainMethodForEval():
     descFiles = __getFiles(descDir, '.txt')
     nmaths = 0
@@ -264,12 +293,14 @@ def MainMethodForEval():
     nmaths_desc_olddep = 0
     nmaths_desc_newdep = 0
 
+    nuniquemaths = 0
+
     edges_olddep = 0
     edges_newdep = 0
     papers = __groupParasBasedOnPaper(descFiles)
     for p in papers.keys():
         #print p
-        edgesConv, edgesNew, nmts = __getDepGraphForEval(path.join(mathDir, p) + '_output.txt')
+        edgesConv, edgesNew, nmts, nuniquemts = __getDepGraphForEval(path.join(mathDir, p) + '_output.txt')
         descs = __getDescriptionFromParas(papers[p])
         mts_desc_olddep = __getNumberOfMathsHavingDesc(edgesConv, descs)
         mts_desc_newdep = __getNumberOfMathsHavingDesc(edgesNew, descs)
@@ -278,15 +309,19 @@ def MainMethodForEval():
         nmaths_desc_wo_dep += len(descs.keys())
         nmaths_desc_olddep += len(mts_desc_olddep)
         nmaths_desc_newdep += len(mts_desc_newdep)
-        
+        nuniquemaths += nuniquemts
+
         edges_olddep += sum(len(v) for k, v in edgesConv.iteritems())
         edges_newdep += sum(len(v) for k, v in edgesNew.iteritems())
 
     print len(papers)
     print edges_olddep, edges_newdep
-    print nmaths, nmaths_desc_wo_dep, nmaths_desc_olddep, nmaths_desc_newdep
+    print nmaths, nuniquemaths, nmaths_desc_wo_dep, nmaths_desc_olddep, nmaths_desc_newdep
     return True
+
 if __name__ == '__main__':
     #Preparation
     __generateRegex()
-    MainMethodForEval()
+    #MainMethodForEval()
+    descFiles = __getFiles(descDir, '.txt')
+    __getStatFromDescFile(descFiles)

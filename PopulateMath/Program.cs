@@ -16,6 +16,8 @@ namespace PopulateMath
 
         static XNamespace mathxmlns = @"http://www.w3.org/1998/Math/MathML";
 
+        static ntcirarxivDataContext dc = new ntcirarxivDataContext();
+
         static List<string> populateXhtmlFiles()
         {
             List<string> xhtmlFls = Directory.EnumerateFiles(xhtmlDir1).ToList();
@@ -40,6 +42,17 @@ namespace PopulateMath
             return retval;
         }
 
+        static Dictionary<string, string> GetDataFromSQL(string file)
+        {
+            Dictionary<string, string> retval = new Dictionary<string, string>();
+            foreach (MathMLData mt in dc.MathMLDatas)
+            {
+                if(file.Contains(mt.PaperID))
+                    retval.Add(mt.ID, mt.MathMLPresExp.ToString(SaveOptions.DisableFormatting));
+            }
+            return retval;
+        }
+
         static void writeMathsToFile(Dictionary<string, string> mts, string destFilePath)
         {
             List<string> lines = new List<string>();
@@ -47,7 +60,7 @@ namespace PopulateMath
             {
                 lines.Add(kvp.Key + "\t" + kvp.Value);
             }
-            File.WriteAllLines(destFilePath, lines, Encoding.UTF8);
+            File.WriteAllLines(destFilePath, lines, new UTF8Encoding(false));
         }
 
         static void Main(string[] args)
@@ -56,7 +69,8 @@ namespace PopulateMath
             foreach (string fl in xhtmlFiles)
             {
                 Console.WriteLine(fl);
-                writeMathsToFile(assigningIDToMath(fl), fl.Replace(xhtmlDir1, destDir).Replace(xhtmlDir2, destDir).Replace(".xhtml", ".txt"));
+                writeMathsToFile(GetDataFromSQL(fl), fl.Replace(xhtmlDir1, destDir).Replace(xhtmlDir2, destDir).Replace(".xhtml", ".txt"));
+                //writeMathsToFile(assigningIDToMath(fl), fl.Replace(xhtmlDir1, destDir).Replace(xhtmlDir2, destDir).Replace(".xhtml", ".txt"));
             }
         }
     }

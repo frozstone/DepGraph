@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ordesignerObjectsDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 11, 8.5" name="ntcirarxiv">
+  <DataContextMoniker Name="/ntcirarxivDataContext" />
+  <nestedChildShapes>
+    <classShape Id="765f68cc-b7d9-463d-81d3-01e59a3a5f20" absoluteBounds="5.125, 2.25, 2, 2.1554996744791666">
+      <DataClassMoniker Name="/ntcirarxivDataContext/MathMLData" />
+      <nestedChildShapes>
+        <elementListCompartment Id="bfab1baa-c369-422b-90b5-241066dea6c2" absoluteBounds="5.14, 2.71, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+  </nestedChildShapes>
+</ordesignerObjectsDiagram>

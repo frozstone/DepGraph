@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="ntcirarxiv" Class="ntcirarxivDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=.\mssqlserver2008;Initial Catalog=ntcirarxiv;Integrated Security=True" SettingsObjectName="PopulateMath.Properties.Settings" SettingsPropertyName="ntcirarxivConnectionString" Provider="System.Data.SqlClient" />
+  <Table Name="dbo.MathMLData" Member="MathMLDatas">
+    <Type Name="MathMLData">
+      <Column Name="ID" Type="System.String" DbType="NVarChar(25) NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="PaperID" Type="System.String" DbType="NVarChar(15) NOT NULL" CanBeNull="false" />
+      <Column Name="MathID" Type="System.String" DbType="NVarChar(10) NOT NULL" CanBeNull="false" />
+      <Column Name="MathObjectID" Type="System.String" DbType="NVarChar(10)" CanBeNull="true" />
+      <Column Name="Display" Type="System.String" DbType="NVarChar(10)" CanBeNull="true" />
+      <Column Name="TexExp" Type="System.String" DbType="NVarChar(MAX)" CanBeNull="true" />
+      <Column Name="MathMLPresExp" Type="System.Xml.Linq.XElement" DbType="Xml NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+    </Type>
+  </Table>
+</Database>
