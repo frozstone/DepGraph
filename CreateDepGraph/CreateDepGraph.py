@@ -1,6 +1,8 @@
 from xml.dom import minidom
 from os import listdir, path
 import re
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
 
 #Properties
 xhtmlDir = 'vartab/'
@@ -12,8 +14,8 @@ pageDestDir = 'vartab/xhtml/'
 
 #Properties for evaluation
 #PLEASE CONSIDER UNIQUE MATH INSTEAD
-descDir = 'D:/ntcir10/annotation/test/' #do for annotation and extraction data
-mathDir = 'D:/ntcir10math/'
+stopwds = set(stopwords.words('english'))
+st = PorterStemmer()
 
 def __generateRegex():
     tags = '|'.join(tagsWithBase)
@@ -155,170 +157,8 @@ def MainMethodForTest():
     return True
 
 
-#Methods for evaluation
-def __checkIfTwoMathsAreSameBase(math1, math2):
-    '''
-        math1, math2 : lists of candidate matchers
-        return True if an edge should be drawn from math1 to math2
-    '''
-    for mt1 in math1:
-        for mt2 in math2:
-            if mt2 == mt1:
-                return True
-    return False
-
-def __createDepGraphForEval(mts):
-    '''
-        mts: {idx:[matchers]}
-    '''
-    edges = {}
-    for idx1, matchers1 in mts.iteritems():
-        for idx2, matchers2 in mts.iteritems():
-            if idx1 != idx2 and __checkIfTwoMathsAreSameBase(matchers1, matchers2):
-                if idx1 not in edges:
-                    edges[idx1] = [idx2]
-                else:
-                    edges[idx1].append(idx2)
-    return edges
-
-def __groupParasBasedOnPaper(paras):
-    papers = {}
-    for para in paras:
-        paper = para[para.rindex('/') + 1:para.rindex('_')]
-        if paper not in papers:
-            papers[paper] = [para]
-        else:
-            papers[paper].append(para)
-    return papers
-
-def __getDescriptionFromPara(fl):
-    '''
-        fl represent para
-    '''
-    lns = open(fl).readlines()
-    desc = {}
-
-    papername = fl[fl.rindex('/') + 1:fl.rindex('_')]
-    mt = ''
-    for ln in lns:
-        if ln.startswith('MATH_'):
-            mt = ln.strip().replace('_', '_' +papername + '_')
-        elif ln.startswith('['):
-            if mt in desc:
-                desc[mt].append(ln.strip())
-            else:
-                desc[mt] = [ln.strip()]
-    return desc
-
-def __getDescriptionFromParas(fls):
-    '''
-        fls represent paras
-    '''
-    descs = {}
-    for fl in fls:
-        descs.update(__getDescriptionFromPara(fl))
-    return descs
-
-def __getDepGraphForEval(fl, mathInDescFiles):
-    '''
-        NOTE:   The math tags for evaluation are obtained using math understanding dataset.
-                They use xmlns --> <m:math>
-        Return: edges_conventional and edges
-                edges = {idx1:[mt1, mt2, ...]}
-    '''
-    lns = open(fl).readlines()
-
-    mts = {}
-    mts_conventional = {}
-
-    nmaths = 0
-    nuniquemaths = 0
-    for ln in lns:
-        cells = ln.strip().split('\t')
-        if ln.strip() == '' and not cells[0] in mathInDescFiles:
-            continue
-
-        nmaths += 1 #if ln.startswith('MATH_') else 0
-        
-        initial = __normalizeMathTags(cells[1])
-        mid, formattedmath = __removeAnnotation(minidom.parseString(initial))
-        expanded = __expandMaths(formattedmath)
-        mts_conventional[cells[0]] = [__getValueOfMathTags(formattedmath)]
-        mts[cells[0]] = expanded
-
-    edges_conventional = __createDepGraphForEval(mts_conventional)
-    edges = __createDepGraphForEval(mts)
-    uniquemaths = __getUniqueMaths(mts_conventional)
-    return edges_conventional, edges, nmaths, mts_conventional, uniquemaths
-
-def __getNumberOfMathsHavingDesc(descs, mathml, edges=None):
-    mts = []
-    for mt, desc in descs.iteritems():
-        mts.append(mt)
-        if edges is not None and mt in edges:
-            mts.extend(edges[mt])
-
-    allmaths = list(set(mts))
-    for i, mt in enumerate(allmaths):
-        allmaths[i] = mathml[mt][0]
-    return list(set(mts)), list(set(allmaths))
-
-def __getUniqueMaths(mts):
-    '''
-        mts : {'id': [mathml in string]}
-    '''
-    uniquemts = {}
-    for k, v in mts.iteritems():
-        if v[0] in uniquemts:
-            uniquemts[v[0]].append(k)
-        else:
-            uniquemts[v[0]] = [k]
-    return uniquemts
-
-def MainMethodForEval():
-    descFiles = __getFiles(descDir, '.txt')
-    nmaths = 0
-    nmaths_desc_wo_dep = 0
-    nmaths_desc_olddep = 0
-    nmaths_desc_newdep = 0
-
-    nuniquemaths = 0
-    nunique_desc_nodep = 0
-    nunique_desc_olddep = 0
-    nunique_desc_newdep = 0
-
-    edges_olddep = 0
-    edges_newdep = 0
-    papers = __groupParasBasedOnPaper(descFiles)
-    for p in papers.keys():
-        #print p
-        descs = __getDescriptionFromParas(papers[p])
-        edgesConv, edgesNew, nmts, mts, uniquemts = __getDepGraphForEval(path.join(mathDir, p) + '_output.txt', descs.keys())
-
-        mts_desc_nodep, unique_mts_nodep = __getNumberOfMathsHavingDesc(descs, mts)
-        mts_desc_olddep, unique_mts_olddep = __getNumberOfMathsHavingDesc(descs, mts, edgesConv)
-        mts_desc_newdep, unique_mts_newdep = __getNumberOfMathsHavingDesc(descs, mts, edgesNew)
-
-        nmaths += nmts
-        nmaths_desc_wo_dep += len(mts_desc_nodep)
-        nmaths_desc_olddep += len(mts_desc_olddep)
-        nmaths_desc_newdep += len(mts_desc_newdep)
-        
-        nuniquemaths += len(uniquemts)
-        nunique_desc_nodep += len(unique_mts_nodep)
-        nunique_desc_olddep += len(unique_mts_olddep)
-        nunique_desc_newdep += len(unique_mts_newdep)
-
-        edges_olddep += sum(len(v) for k, v in edgesConv.iteritems())
-        edges_newdep += sum(len(v) for k, v in edgesNew.iteritems())
-
-    print len(papers)
-    print edges_olddep, edges_newdep
-    print nmaths, nmaths_desc_wo_dep, nmaths_desc_olddep, nmaths_desc_newdep
-    print nuniquemaths, nunique_desc_nodep, nunique_desc_olddep, nunique_desc_newdep
-    return True
-
 if __name__ == '__main__':
     #Preparation
     __generateRegex()
     MainMethodForEval()
+    print 'finish'
