@@ -5,7 +5,8 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 
 #Properties
-xhtmlDir = 'vartab/'
+xmlDir = 'vartab/xml/'
+sentenceDir = 'vartab/multifiles/'
 tagsWithBase = ['mroot', 'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mmultiscripts'] #have not considered mstyle
 re_baseTags = '<(tags)>((?!(tags)>).)*</(tags)>'
 expressiontag = 'expression'
@@ -151,7 +152,7 @@ def __getDepGraphForTest(fl):
     return True
 
 def MainMethodForTest():
-    files = __getFiles(xhtmlDir, '.xml')
+    files = __getFiles(xmlDir, '.xml')
     for fl in files:
         __getDepGraphForTest(fl)
     return True
@@ -160,5 +161,5 @@ def MainMethodForTest():
 if __name__ == '__main__':
     #Preparation
     __generateRegex()
-    MainMethodForEval()
+    MainMethodForTest()
     print 'finish'

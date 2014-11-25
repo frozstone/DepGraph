@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>1eaec13c-3be9-448a-b3a3-7db3d15556a9</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>CreateDepGraph.py</StartupFile>
+    <StartupFile>CreateNewXML.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -24,6 +24,7 @@
   <ItemGroup>
     <Compile Include="CreateDepGraph.py" />
     <Compile Include="CreateDepGraphEval.py" />
+    <Compile Include="CreateNewXML.py" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
